@@ -58,7 +58,23 @@ public class MemorySpace {
 	 * @return the base address of the allocated block, or -1 if unable to allocate
 	 */
 	public int malloc(int length) {		
-		//// Replace the following statement with your code
+		ListIterator iter = freeList.iterator();
+		while (iter.hasNext()) {
+			if (iter.current.block.length == length) {
+				MemoryBlock block = new MemoryBlock(iter.current.block.baseAddress, length);
+				freeList.remove(block);
+				allocatedList.addLast(block);
+				return block.baseAddress;
+			}
+			else if (iter.current.block.length > length) {
+				MemoryBlock newBlock = new MemoryBlock(iter.current.block.baseAddress, length);
+				allocatedList.addLast(newBlock);
+				iter.current.block.baseAddress = iter.current.block.baseAddress + length;
+				iter.current.block.length = iter.current.block.length - length;
+				return newBlock.baseAddress;
+			}
+			iter.next();
+		}
 		return -1;
 	}
 
@@ -71,7 +87,19 @@ public class MemorySpace {
 	 *            the starting address of the block to freeList
 	 */
 	public void free(int address) {
-		//// Write your code here
+		ListIterator iter = allocatedList.iterator();
+		if (allocatedList.getSize() == 0) {
+			throw new IllegalArgumentException(
+					"index must be between 0 and size");
+		}
+		while (iter.hasNext()) {
+			if (iter.current.block.baseAddress == address) {
+				freeList.addLast(iter.current.block);
+				allocatedList.remove(iter.current);
+				return;
+			}
+			iter.next();
+		}
 	}
 	
 	/**
@@ -88,6 +116,23 @@ public class MemorySpace {
 	 * In this implementation Malloc does not call defrag.
 	 */
 	public void defrag() {
-		//// Write your code here
+		Node curr = freeList.getFirst();
+		Node right = curr;
+		int c = 1;
+		int tmpaddress, tmplength;
+		while (curr != null && curr.next != null) {
+			if (curr.block.baseAddress + curr.block.length == right.block.baseAddress) {
+				tmpaddress = right.block.baseAddress;
+				tmplength = right.block.length;
+				freeList.remove(right);
+				curr.block.length += tmplength;
+				c++;
+				right = curr;
+			}
+			right = right.next;
+			if (right == null) {
+				curr = curr.next;
+			}
+		}
 	}
 }
